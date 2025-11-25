@@ -45,14 +45,10 @@ jobs:
             robocopy "%USERPROFILE%\AppData\Local\ms-playwright" "%CD%\\dist\\ms-playwright" /E /MT:8
             set rc=%ERRORLEVEL%
             echo Robocopy exit code: %rc%
-            REM Robocopy return codes: 0..7 = OK, 8+ = error
-            if %rc% GEQ 8 (
-              echo Robocopy reported a failure (exit code %rc%). Failing job.
-              exit /b %rc%
-            ) else (
-              echo Copy complete (robocopy exit code %rc%). Continuing.
-              exit /b 0
-            )
+            REM Treat 0..7 as OK (Robocopy docs); >=8 means failure
+            if %rc% GEQ 8 exit /b %rc%
+            echo Copy complete (robocopy exit code %rc%). Continuing.
+            exit /b 0
           ) else (
             echo WARNING: Playwright browser folder not found at %USERPROFILE%\AppData\Local\ms-playwright
             dir "%USERPROFILE%\AppData\Local"
