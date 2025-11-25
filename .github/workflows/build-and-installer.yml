@@ -41,19 +41,28 @@ jobs:
         shell: cmd
         run: |
           echo Copying Playwright browsers into dist...
-          if exist "%USERPROFILE%\AppData\Local\ms-playwright" (
-            robocopy "%USERPROFILE%\AppData\Local\ms-playwright" "%CD%\\dist\\ms-playwright" /E /MT:8
-            set rc=%ERRORLEVEL%
-            echo Robocopy exit code: %rc%
-            REM Treat 0..7 as OK (Robocopy docs); >=8 means failure
-            if %rc% GEQ 8 exit /b %rc%
-            echo Copy complete (robocopy exit code %rc%). Continuing.
-            exit /b 0
-          ) else (
-            echo WARNING: Playwright browser folder not found at %USERPROFILE%\AppData\Local\ms-playwright
+          REM source path (where playwright installed in the runner)
+          set PLAYWRIGHT_SRC=%USERPROFILE%\AppData\Local\ms-playwright
+          if not exist "%PLAYWRIGHT_SRC%" (
+            echo WARNING: Playwright browser folder not found at %PLAYWRIGHT_SRC%
             dir "%USERPROFILE%\AppData\Local"
             exit /b 1
           )
+
+          REM Ensure destination exists
+          if not exist "%CD%\dist" mkdir "%CD%\dist"
+          REM Copy recursively (multi-threaded)
+          robocopy "%PLAYWRIGHT_SRC%" "%CD%\dist\ms-playwright" /E /MT:8
+
+          REM Immediately check robocopy result via ERRORLEVEL
+          REM Robocopy return codes: 0..7 = OK (or minor), >=8 = failure
+          if errorlevel 8 (
+            echo Robocopy failed with ERRORLEVEL %ERRORLEVEL% - aborting.
+            exit /b %ERRORLEVEL%
+          )
+
+          echo Copy complete (robocopy return code %ERRORLEVEL%). Continuing.
+          exit /b 0
 
       - name: Show dist contents (debug)
         run: dir /s dist
