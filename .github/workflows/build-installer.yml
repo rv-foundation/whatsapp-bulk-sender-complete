@@ -17,10 +17,12 @@ jobs:
           name: WhatsApp-Sender-EXE
           path: dist
 
-      - name: Setup Inno Setup
-        uses: Minionguyjpro/InnoSetup-Action@v1.2.0
-        with:
-          script-path: installer.iss
+      - name: Install Inno Setup
+        uses: juszczak/innosetup-action@v1
+
+      - name: Build Installer
+        run: |
+          iscc installer.iss
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
