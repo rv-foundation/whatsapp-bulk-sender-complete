@@ -1,0 +1,97 @@
+name: Build EXE and Installer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_exe:
+    name: Build Windows EXE
+    runs-on: windows-latest
+    outputs:
+      exe-artifact-name: WhatsApp-Sender-EXE
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+        shell: cmd
+
+      - name: Install Playwright Browsers
+        run: |
+          python -m playwright install chromium
+        shell: cmd
+
+      - name: Build EXE with PyInstaller
+        shell: cmd
+        run: |
+          REM Build onefile exe and include Playwright browsers folder (Windows runner)
+          pyinstaller --onefile --windowed --clean --add-data "%USERPROFILE%\\AppData\\Local\\ms-playwright;ms-playwright" --icon icon.ico app.py
+
+      - name: Show dist contents (debug)
+        run: dir /s dist
+        shell: cmd
+
+      - name: Upload EXE Artifact
+        id: upload_exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsApp-Sender-EXE
+          path: dist
+          retention-days: 7
+
+  build_installer:
+    name: Build Windows Installer
+    runs-on: windows-latest
+    needs: build_exe
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download EXE artifact from previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: WhatsApp-Sender-EXE
+          path: dist
+
+      - name: List dist for debugging
+        shell: cmd
+        run: dir /s dist
+
+      - name: Install Inno Setup via Chocolatey
+        shell: cmd
+        run: |
+          choco feature enable -n allowGlobalConfirmation
+          choco install innosetup -y --no-progress
+
+      - name: Verify iscc available
+        shell: cmd
+        run: where iscc
+
+      - name: Build installer with Inno Setup Compiler
+        shell: cmd
+        run: |
+          REM Ensure installer.iss expects files relative to repo root or dist/
+          REM Compile installer (output will be created under installer\)
+          iscc installer.iss
+
+      - name: Show installer folder
+        shell: cmd
+        run: dir /s installer
+
+      - name: Upload Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsApp-Sender-Installer
+          path: installer\WhatsAppBulkSender_Setup.exe
+          retention-days: 7
