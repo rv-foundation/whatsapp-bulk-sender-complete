@@ -1,0 +1,1 @@
+Hi {{name}}, this is a sample message from WhatsApp Bulk Sender.

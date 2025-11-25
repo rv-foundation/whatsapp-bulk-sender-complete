@@ -1,0 +1,38 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install Playwright Browsers
+        run: |
+          python -m playwright install chromium
+
+      - name: Build EXE
+        run: |
+          pyinstaller --onefile --windowed ^
+            --add-data "%USERPROFILE%\AppData\Local\ms-playwright;ms-playwright" ^
+            --icon icon.ico app.py
+
+      - name: Upload EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsApp-Sender-EXE
+          path: dist/app.exe
