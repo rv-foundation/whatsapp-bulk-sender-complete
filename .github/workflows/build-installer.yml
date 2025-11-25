@@ -17,15 +17,32 @@ jobs:
           name: WhatsApp-Sender-EXE
           path: dist
 
-      - name: Install Inno Setup
-        uses: juszczak/innosetup-action@v1
+      - name: List dist for debugging
+        run: dir /s dist
+
+      - name: Install Inno Setup via Chocolatey
+        run: |
+          choco feature enable -n allowGlobalConfirmation
+          choco install innosetup -y --no-progress
+        shell: cmd
+
+      - name: Verify Inno Setup installed
+        run: where iscc
+        shell: cmd
 
       - name: Build Installer
         run: |
+          REM ensure working directory contains installer.iss
+          dir
           iscc installer.iss
+        shell: cmd
+
+      - name: List installer output
+        run: dir /s installer
+        shell: cmd
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: WhatsApp-Sender-Installer
-          path: installer/WhatsAppBulkSender_Setup.exe
+          path: installer\WhatsAppBulkSender_Setup.exe
