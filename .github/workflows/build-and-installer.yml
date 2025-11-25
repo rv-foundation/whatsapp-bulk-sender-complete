@@ -43,7 +43,16 @@ jobs:
           echo Copying Playwright browsers into dist...
           if exist "%USERPROFILE%\AppData\Local\ms-playwright" (
             robocopy "%USERPROFILE%\AppData\Local\ms-playwright" "%CD%\\dist\\ms-playwright" /E /MT:8
-            echo Copy complete.
+            set rc=%ERRORLEVEL%
+            echo Robocopy exit code: %rc%
+            REM Robocopy return codes: 0..7 = OK, 8+ = error
+            if %rc% GEQ 8 (
+              echo Robocopy reported a failure (exit code %rc%). Failing job.
+              exit /b %rc%
+            ) else (
+              echo Copy complete (robocopy exit code %rc%). Continuing.
+              exit /b 0
+            )
           ) else (
             echo WARNING: Playwright browser folder not found at %USERPROFILE%\AppData\Local\ms-playwright
             dir "%USERPROFILE%\AppData\Local"
