@@ -37,6 +37,19 @@ jobs:
           REM Build onefile exe and include Playwright browsers folder (Windows runner)
           pyinstaller --onefile --windowed --clean --add-data "%USERPROFILE%\\AppData\\Local\\ms-playwright;ms-playwright" --icon icon.ico app.py
 
+      - name: Copy Playwright browsers into dist
+        shell: cmd
+        run: |
+          echo Copying Playwright browsers into dist...
+          if exist "%USERPROFILE%\AppData\Local\ms-playwright" (
+            robocopy "%USERPROFILE%\AppData\Local\ms-playwright" "%CD%\\dist\\ms-playwright" /E /MT:8
+            echo Copy complete.
+          ) else (
+            echo WARNING: Playwright browser folder not found at %USERPROFILE%\AppData\Local\ms-playwright
+            dir "%USERPROFILE%\AppData\Local"
+            exit /b 1
+          )
+
       - name: Show dist contents (debug)
         run: dir /s dist
         shell: cmd
